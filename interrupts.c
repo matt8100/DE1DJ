@@ -4,11 +4,12 @@ Interrupt setup and subroutines
 
 #pragma once
 
-#include "constants.h"
+#include <string.h>
+#include "constants.c"
 #include "gameplay.c"
 #include "hex.c"
-#include "gameplayBGM.h"
-#include "mainMenuBGM.h"
+#include "gameplayBGM.c"
+#include "mainMenuBGM.c"
 
 /* Setup */
 void setupIRQStack() {
@@ -52,8 +53,8 @@ void configPS2() {
 }
 
 void configPrivTimer() {
-  *privateTimerPtr = 200 * 1000000 * 0.1; // load
-  *(privateTimerPtr + 2) = 0b010; // enable interupt and automatic 
+  *privateTimerPtr = 200 * 1000000 * 0.2; // load; every 0.2 seconds
+  *(privateTimerPtr + 2) = 0b010; // enable automatic 
 }
 
 void configAudio() {
@@ -62,6 +63,11 @@ void configAudio() {
 
 void enableInterrupts() {
   int status = 0b01010011; // SVC mode, interrupts enabled
+  asm("msr cpsr, %[ps]" : : [ps]"r"(status));
+}
+
+void disableInterrupts() {
+  int status = 0b11010011;
   asm("msr cpsr, %[ps]" : : [ps]"r"(status));
 }
 
@@ -78,6 +84,13 @@ void checkHit(int lane) {
   int position = state.laneArrow[lane];
   if (position > 160 && position < 200) {
     state.laneArrow[lane] = 0;
+    state.score += 1;
+    displayScore();
+  }
+
+  position = state.laneArrow[lane + 1];
+  if (position > 160 && position < 200) {
+    state.laneArrow[lane + 1] = 0;
     state.score += 1;
     displayScore();
   }
@@ -99,7 +112,6 @@ void PS2ISR() {
   } while (RAVAIL > 1);
 
   uint16_t key = (keyboardData[1] << 8) | keyboardData[0];
-  int position;
 
   switch(state.mode) {
     case MAINMENU:
@@ -133,9 +145,43 @@ void PS2ISR() {
         case RIGHTARROW:
           checkHit(LANE4);
           break;
+
+        case PGUP:
+          if (state.noteSpeed < 10) {
+            state.noteSpeed++;
+          }
+          break;
+        
+        case PGDN:
+          if (state.noteSpeed > 1) {
+            state.noteSpeed--;
+          }
+          break;
+
+        case ESC:
+          state.mode = PAUSED;
+          onPause();
+          *(privateTimerPtr + 2) = 0b010; // disable timer
+          *audioPtr = 0; // enable write interrupt
+          break;
         default: break;
       }
       break;
+    case PAUSED:
+      switch (key) {
+        case ESC:
+          state.mode = GAMEPLAY;
+          *(privateTimerPtr + 2) = 0b111; // disable timer
+          *audioPtr = 0b10; // enable write interrupt
+          break;
+        case BKSP:
+          state.mode = MAINMENU;
+          state.audioTime = 0;
+          state.audioSize = MAINMENUSONGLENGTH;
+          *audioPtr = 0b10; // enable write interrupt
+          memset(state.laneArrow, 0, sizeof(state.laneArrow));
+          break;
+      }
     default: break;
   }
 }
@@ -143,8 +189,8 @@ void PS2ISR() {
 // randomizes when a note will begin descending
 void privateTimerISR() {
   int i;
-  for (i = 0; i < 4; i++) {
-    if (!state.laneArrow[i] && rand() % 101 == 100) {
+  for (i = 0; i < NUMNOTES; i++) {
+    if (!state.laneArrow[i] && rand() % 201 == 0) {
       state.laneArrow[i] += 1;
     }
   }
@@ -167,7 +213,6 @@ void audioISR() {
           sample = MainMenuBGM[state.audioTime] * 100000;
           break;
         case GAMEPLAY:
-          sample = 0;
           sample = GameplayBGM[state.audioTime] * 100000;
           break;
         default: sample = 0;
@@ -184,11 +229,8 @@ void audioISR() {
         // if end of gameplay song, return to main menu
         if (state.mode == GAMEPLAY) {
           state.mode = MAINMENU;
-          state.audioTime = MAINMENUSONGLENGH;
-          state.laneArrow[0] = 0;
-          state.laneArrow[1] = 0;
-          state.laneArrow[2] = 0;
-          state.laneArrow[3] = 0;
+          state.audioTime = MAINMENUSONGLENGTH;
+          memset(state.laneArrow, 0, sizeof(state.laneArrow));
         }
       }
 		}

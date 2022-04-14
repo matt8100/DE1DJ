@@ -5,7 +5,7 @@ Graphics setup and helpers
 #pragma once
 
 #include <stdint.h>
-#include "constants.h"
+#include "constants.c"
 
 void plotPixel(int x, int y, short int lineColor, int transparent) {
   if (transparent && lineColor == 0) return;
@@ -17,6 +17,35 @@ void clearScreen() {
   int x, y;
   for (x = 0; x < RESOLUTION_X; x++) {
     for (y = 0; y < RESOLUTION_Y; y++) {
+      plotPixel(x, y, 0, 0);
+    }
+  }
+}
+
+// draws an arrow around an origin point
+void drawArrow(int x0, int y0, const uint16_t arrow[32][32]) {
+  int x, y;
+  for (x = x0 - 16; x < x0 + 16; x++) {
+    for (y = y0 - 16; y < y0 + 16; y++) {
+      if (x < 0 || x > RESOLUTION_X || y < 0 || y > RESOLUTION_Y) continue;
+      plotPixel(x, y, arrow[y - y0 + 16][x - x0 + 16], 1);
+    }
+  }
+}
+
+void drawPauseText(int x0, int y0, const uint16_t pauseText[14][60]) {
+  int x, y;
+  for (x = x0 - 30; x < x0 - 30; x++) {
+    for (y = y0 - 7; y < y0 - 7; y++) {
+      plotPixel(x, y, pauseText[y - y0 + 7][x - x0 + 30], 0);
+    }
+  }
+}
+
+void clearPauseText(int x0, int y0) {
+  int x, y;
+  for (x = x0 - 30; x < x0 - 30; x++) {
+    for (y = y0 - 7; y < y0 - 7; y++) {
       plotPixel(x, y, 0, 0);
     }
   }

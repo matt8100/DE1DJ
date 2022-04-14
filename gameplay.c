@@ -4,72 +4,90 @@ Gameplay mode helpers
 
 #pragma once
 
-#include "constants.h"
-#include "arrows.h"
+#include "constants.c"
+#include "arrows.c"
 #include "graphics.c"
-#include "gameplayBG.h"
-
-// draws an arrow around an origin point
-void drawArrow(int x0, int y0, const uint16_t arrow[32][32]) {
-  int x, y;
-  for (x = x0 - 16; x < x0 + 16; x++) {
-    for (y = y0 - 16; y < y0 + 16; y++) {
-      if (x < 0 || x > RESOLUTION_X || y < 0 || y > RESOLUTION_Y) continue;
-      plotPixel(x, y, arrow[y - y0 + 16][x - x0 + 16], 1);
-    }
-  }
-}
+#include "interrupts.c"
+#include "gameplayBG.c"
 
 // determines origin point of arrow to draw in specific lane and moves arrows
-void drawArrowInLane(int lane) {
+void drawArrowsInLanes() {
   int x, y;
 
-  switch (lane) {
-    case LANE1:
-      x = 99;
-      y = state.laneArrow[LANE1];
-      if (y == 0) break;
+  // lane 1
+  x = 99;
+  y = state.laneArrow[0];
+  if (y != 0) drawArrow(x, y, LeftArrow);
 
-      drawArrow(x, y, LeftArrow);
-      break;
-    case LANE2:
-      x = 139;
-      y = state.laneArrow[LANE2];
-      if (y == 0) break;
+  y = state.laneArrow[1];
+  if (y != 0) drawArrow(x, y, LeftArrow);
 
-      drawArrow(x, y, DownArrow);
-      break;
-    case LANE3:
-      x = 179;
-      y = state.laneArrow[LANE3];
-      if (y == 0) break;
+  // lane 2
+  x = 139;
+  y = state.laneArrow[2];
+  if (y != 0) drawArrow(x, y, DownArrow);
 
-      drawArrow(x, y, UpArrow);
-      break;
-    case LANE4:
-      x = 219;
-      y = state.laneArrow[LANE4];
-      if (y == 0) break;
+  y = state.laneArrow[3];
+  if (y != 0) drawArrow(x, y, DownArrow);
 
-      drawArrow(x, y, RightArrow);
-      break;
-    default: break;
-  }
+  // lane 3
+  x = 179;
+  y = state.laneArrow[4];
+  if (y != 0) drawArrow(x, y, UpArrow);
+
+  y = state.laneArrow[5];
+  if (y != 0) drawArrow(x, y, UpArrow);
+
+  // lane 4
+  x = 219;
+  y = state.laneArrow[6];
+  if (y != 0) drawArrow(x, y, RightArrow);
+
+  y = state.laneArrow[7];
+  if (y != 0) drawArrow(x, y, RightArrow);
 }
 
 void drawGameplay() {
   clearScreen();
   drawScreen(gameplayBG);
-  drawArrowInLane(LANE1);
-  drawArrowInLane(LANE2);
-  drawArrowInLane(LANE3);
-  drawArrowInLane(LANE4);
+  drawArrowsInLanes();
   waitForVsync();
 
-  for (i = 0; i < 4; i++) {
+  int i;
+  for (i = 0; i < NUMNOTES; i++) {
     if (state.laneArrow[i]) {
-      state.laneArrow[i] += 1;
-      if (state.laneArrow[i] == 240) state.laneArrow[i] = 0;
+      state.laneArrow[i] += state.noteSpeed;
+      if (state.laneArrow[i] >= 240) state.laneArrow[i] = 0;
     }
+  }
+}
+
+// set both buffers to be same to avoid potential flicker
+void onPause() {
+  clearScreen();
+  drawScreen(gameplayBG);
+  drawArrowsInLanes();
+  waitForVsync();
+  clearScreen();
+  drawScreen(gameplayBG);
+  drawArrowsInLanes();
+}
+
+void drawPaused() {
+  drawPauseText(295, 50, PauseText);
+  waitForVsync();
+  drawPauseText(295, 50, PauseText);
+
+  int i;
+  for (i = 0; i < 30; i++) {
+    waitForVsync();
+  }
+
+  clearPauseText(295, 50);
+  waitForVsync();
+  clearPauseText(295, 50);
+
+  for (i = 0; i < 30; i++) {
+    waitForVsync();
   }
 }

@@ -1,7 +1,8 @@
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
-#include "constants.h"
+#include "constants.c"
 #include "graphics.c"
 #include "interrupts.c"
 #include "hex.c"
@@ -16,10 +17,8 @@ int main() {
   state.audioTime = 0;
   state.audioSize = MAINMENUSONGLENGTH;
   state.score = 0;
-  state.laneArrow[0] = 0;
-  state.laneArrow[1] = 0;
-  state.laneArrow[2] = 0;
-  state.laneArrow[3] = 0;
+  memset(state.laneArrow, 0, sizeof(state.laneArrow));
+  state.noteSpeed = 5;
 
   // setup
   setupInterrupts();
@@ -34,6 +33,9 @@ int main() {
         break;
       case GAMEPLAY:
         drawGameplay();
+        break;
+      case PAUSED:
+        drawPaused();
         break;
       default: state.mode = MAINMENU;
     }

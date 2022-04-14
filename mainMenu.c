@@ -4,8 +4,8 @@ Main menu mode heleprs
 
 #pragma once
 
-#include "constants.h"
-#include "mainMenuBG.h"
+#include "constants.c"
+#include "mainMenuBG.c"
 
 // draws two-frame main menu
 void drawMainMenu() {
@@ -15,7 +15,7 @@ void drawMainMenu() {
   clearScreen();
   drawScreen(MainMenuFrame1);
 
-  // wait for 1 second
+  // wait for 30 frames
   int i;
   for (i = 0; i < 30; i++) {
     waitForVsync();
@@ -27,7 +27,7 @@ void drawMainMenu() {
   clearScreen();
   drawScreen(MainMenuFrame2);
 
-  // wait for 1 second
+  // wait for 30 frames
   for (i = 0; i < 30; i++) {
     waitForVsync();
   }
