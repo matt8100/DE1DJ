@@ -25,12 +25,9 @@ struct State {
 
 #define LANE1 0
 #define LANE2 2
-#define LANE3 3
-#define LANE4 5
+#define LANE3 4
+#define LANE4 6
 #define NUMNOTES 8
-
-#define NOTESPEED 1
-#define BPM 77
 
 // Helpers
 #define abs(x) (x > 0) ? x : -x

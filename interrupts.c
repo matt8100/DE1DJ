@@ -53,7 +53,7 @@ void configPS2() {
 }
 
 void configPrivTimer() {
-  *privateTimerPtr = 200 * 1000000 * 0.2; // load; every 0.2 seconds
+  *privateTimerPtr = 200 * 1000000 * 0.4; // load; every 0.4 seconds
   *(privateTimerPtr + 2) = 0b010; // enable automatic 
 }
 
@@ -82,14 +82,14 @@ void setupInterrupts() {
 
 void checkHit(int lane) {
   int position = state.laneArrow[lane];
-  if (position > 160 && position < 200) {
+  if (position > 180 && position < 220) {
     state.laneArrow[lane] = 0;
     state.score += 1;
     displayScore();
   }
 
   position = state.laneArrow[lane + 1];
-  if (position > 160 && position < 200) {
+  if (position > 180 && position < 220) {
     state.laneArrow[lane + 1] = 0;
     state.score += 1;
     displayScore();
@@ -147,7 +147,7 @@ void PS2ISR() {
           break;
 
         case PGUP:
-          if (state.noteSpeed < 10) {
+          if (state.noteSpeed < 30) {
             state.noteSpeed++;
           }
           break;
@@ -190,7 +190,7 @@ void PS2ISR() {
 void privateTimerISR() {
   int i;
   for (i = 0; i < NUMNOTES; i++) {
-    if (!state.laneArrow[i] && rand() % 201 == 0) {
+    if (!state.laneArrow[i] && rand() % 5 == 0) {
       state.laneArrow[i] += 1;
     }
   }
